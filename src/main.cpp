@@ -27,7 +27,7 @@ const char *fragment_source = R"glsl(
 	out vec4 fragment_colour;
 	void main()
 	{
-		fragment_colour = vec4(0.0, 0.0, 0.0, 1.0);
+		fragment_colour = vec4(1.0, 1.0, 1.0, 1.0);
 	}
 )glsl";
 
@@ -135,7 +135,9 @@ int main()
 	line_segments.push_back(LineSegment(glm::vec2(0.4f, 0.4f),   glm::vec2(0.4f, -0.4f)));
 
 	glfwSetKeyCallback(window, keyCallback);
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_STENCIL_TEST);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	while (!glfwWindowShouldClose(window))
 	{
 		time_curr  = glfwGetTime();
@@ -144,7 +146,7 @@ int main()
 		time_last  = time_curr;
 		printf("FPS: %.0f\n", 1.0f/time_delta);
 
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 		glfwGetCursorPos(window, &cursor_x, &cursor_y);
 		cursor_pos.x =  ((cursor_x/320.0f)-1.0f);
@@ -171,9 +173,25 @@ int main()
 		}
 
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+		glStencilMask(0xFF);
+		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 		for (index = 0; index < line_segments.size(); index++)
 			glDrawArrays(GL_TRIANGLE_STRIP, index*4, 4);
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		glStencilMask(0x00);
+
+		float square[] = {
+			-1.0f,  1.0f,
+			 1.0f,  1.0f,
+			-1.0f, -1.0f,
+			 1.0f, -1.0f,
+		};
+		glBufferData(GL_ARRAY_BUFFER, sizeof(square), square, GL_STATIC_DRAW);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
