@@ -164,33 +164,32 @@ int main()
 			glm::vec2 intersect;
 			for (LineSegment line_segment: line_segments)
 				if (
-					(line_segment.p1 != point) &&
-					(line_segment.p2 != point) &&
-					(line_segment.intersect(LineSegment(cursor_pos, point), intersect))
+					(line_segment.intersect(LineSegment(cursor_pos, point), intersect)) &&
+					((glm::distance(cursor_pos, point) - glm::distance(cursor_pos, intersect)) > 0.01f)
 				) return true;
 			return false;
 		});
 
 		for (glm::vec2 &point: points)
 		{
+			float split_distance = 0.0001f;
+			glm::vec2 normal = glm::normalize(glm::cross(glm::vec3(point - cursor_pos, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
+			points.push_front(glm::vec2(point + (normal * split_distance)));
+			point = glm::vec2(point - (normal * split_distance));
+		}
+
+		for (glm::vec2 &point: points)
+		{
 			glm::vec2 intersect;
-			glm::vec2 original_point = point;
-			glm::vec2 distant_point = (glm::normalize(point - cursor_pos) * 1024.0f) + cursor_pos;
-			bool add_point = false;
+			point = cursor_pos + (glm::normalize(point - cursor_pos) * 1024.0f);
 			for (LineSegment line_segment: line_segments)
 				if (
-					(line_segment.p1 != original_point) &&
-					(line_segment.p2 != original_point) &&
-					(line_segment.intersect(LineSegment(cursor_pos, distant_point), intersect)) &&
-					(glm::distance(cursor_pos, intersect) < glm::distance(cursor_pos, distant_point))
-				) {
-					add_point = true;
-					distant_point = intersect;
-				}
-			if (add_point) points.push_front(distant_point);
+					(line_segment.intersect(LineSegment(cursor_pos, point), intersect)) &&
+					(glm::distance(cursor_pos, intersect) < glm::distance(cursor_pos, point))
+				) point = intersect;
 		}
-		points.sort(comparePoints);
 
+		points.sort(comparePoints);
 		points.push_back(points.front());
 		points.push_front(cursor_pos);
 		float vertices[points.size()*2];
@@ -202,7 +201,7 @@ int main()
 			i++;
 		}
 
-//		glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+//		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 		glDrawArrays(GL_TRIANGLE_FAN, 0, points.size());
 
