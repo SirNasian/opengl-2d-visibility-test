@@ -34,16 +34,16 @@ const char *fragment_source = R"glsl(
 
 		vec2 ray         = world_pos - cursor_pos;
 		vec2 line_normal = cross(vec3(line_start - line_end, 0.0), vec3(0.0, 0.0, 1.0)).xy;
-		if (dot(line_normal, ray) == 0.0) return 0.0;
+		if (dot(line_normal, ray) == 0.0) return 1.0;
 
 		float d = dot(line_normal, line_start);
 		float x = (d - dot(line_normal, cursor_pos)) / dot(line_normal, normalize(ray));
-		if ((x > 0.0) && (x < distance(world_pos, cursor_pos)))
+		if ((x >= 0.0) && (x <= distance(world_pos, cursor_pos)))
 		{
 			vec2 ray_normal = cross(vec3(world_pos - cursor_pos, 0.0), vec3(0.0, 0.0, 1.0)).xy;
 			d = dot(ray_normal, cursor_pos);
 			x = (d - dot(ray_normal, line_start)) / dot(ray_normal, normalize(line_end - line_start));
-			if ((x > 0.0) && (x < distance(line_end, line_start))) return 0.0;
+			if ((x >= 0.0) && (x <= distance(line_end, line_start))) return 0.0;
 		}
 
 		return 1.0;
