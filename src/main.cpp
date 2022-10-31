@@ -13,19 +13,23 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 const char *vertex_source = R"glsl(
 	#version 330 core
 	in vec2 position;
+	out vec2 world_pos;
 	void main()
 	{
+		world_pos = position;
 		gl_Position = vec4(position, 0.0, 1.0);
 	}
 )glsl";
 
 const char *fragment_source = R"glsl(
 	#version 330 core
-	in vec2 position;
+	in vec2 world_pos;
 	out vec4 colour;
+	uniform vec2 cursor_pos;
 	void main()
 	{
-		colour = vec4(1.0, 1.0, 1.0, 1.0);
+		float dist = 0.5 - distance(cursor_pos, world_pos);
+		colour = vec4(dist, dist, dist, 1.0);
 	}
 )glsl";
 
@@ -113,12 +117,17 @@ int main()
 	glUseProgram(shader_program);
 	glBindVertexArray(vao);
 
+	double cursor_x, cursor_y;
+	unsigned int cursor_pos_uniform = glGetUniformLocation(shader_program, "cursor_pos");
+
 	glfwSetKeyCallback(window, keyCallback);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	while (!glfwWindowShouldClose(window))
 	{
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		glfwGetCursorPos(window, &cursor_x, &cursor_y);
+		glUniform2f(cursor_pos_uniform, (cursor_x/320.0f)-1.0f, -((cursor_y/320.0f)-1.0f));
 		glDrawElements(GL_TRIANGLE_FAN, 4, GL_UNSIGNED_INT, 0);
 
 		glfwSwapBuffers(window);
