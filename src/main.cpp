@@ -1,7 +1,11 @@
 #include <iostream>
+#include <list>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+
+#include "line.hpp"
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -100,6 +104,14 @@ int main()
 	double time_curr, time_last, time_delta;
 	time_last = glfwGetTime();
 
+	std::list<LineSegment> line_segments;
+	std::list<glm::vec2>   points;
+
+	line_segments.push_back(LineSegment(glm::vec2(-0.9f, -0.9f), glm::vec2(-0.9f, 0.9f)));
+	line_segments.push_back(LineSegment(glm::vec2(-0.9f, -0.9f), glm::vec2(0.9f, -0.9f)));
+	line_segments.push_back(LineSegment(glm::vec2(0.9f, 0.9f),   glm::vec2(-0.9f, 0.9f)));
+	line_segments.push_back(LineSegment(glm::vec2(0.9f, 0.9f),   glm::vec2(0.9f, -0.9f)));
+
 	glfwSetKeyCallback(window, keyCallback);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	while (!glfwWindowShouldClose(window))
@@ -116,16 +128,24 @@ int main()
 		cursor_x =  ((cursor_x/320.0f)-1.0f);
 		cursor_y = -((cursor_y/320.0f)-1.0f);
 
-		const float vertices[] = {
-			(float)(cursor_x), (float)(cursor_y),
-			-0.9f,  0.9f,
-			 0.9f,  0.9f,
-			 0.9f, -0.9f,
-			-0.9f, -0.9f,
-			-0.9f,  0.9f,
-		};
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+		points.clear();
+		for (const LineSegment &line_segment: line_segments)
+		{
+			points.push_back(line_segment.p1);
+			points.push_back(line_segment.p2);
+		}
+		// TODO: sort points by angle relative to cursor location
+		points.push_front(glm::vec2(cursor_x, cursor_y));
+		float vertices[points.size()*2];
+		unsigned int i = 0;
+		for (glm::vec2 point: points)
+		{
+			vertices[(i*2)+0] = point.x;
+			vertices[(i*2)+1] = point.y;
+			i++;
+		}
 
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 		glDrawArrays(GL_TRIANGLE_FAN, 0, sizeof(vertices)/sizeof(vertices[0])/2);
 
 		glfwSwapBuffers(window);
