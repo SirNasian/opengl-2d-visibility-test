@@ -46,13 +46,6 @@ unsigned int createShaderProgram(const char *vertex_source, const char *fragment
 	return shader_program;
 }
 
-const float vertices[] = {
-	-0.9f,  0.9f,
-	 0.9f,  0.9f,
-	 0.9f, -0.9f,
-	-0.9f, -0.9f,
-};
-
 unsigned int createVAO(unsigned int shader_program, unsigned int &vbo)
 {
 	unsigned int vao;
@@ -62,7 +55,6 @@ unsigned int createVAO(unsigned int shader_program, unsigned int &vbo)
 
 	glCreateBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
 	unsigned int position_attribute = glGetAttribLocation(shader_program, "position");
 	glVertexAttribPointer(position_attribute, 2, GL_FLOAT, GL_FALSE, 2*sizeof(float), 0);
@@ -121,10 +113,20 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glfwGetCursorPos(window, &cursor_x, &cursor_y);
-		cursor_x = (cursor_x/320.0f)-1.0f;
-		cursor_y = (cursor_y/320.0f)-1.0f;
+		cursor_x =  ((cursor_x/320.0f)-1.0f);
+		cursor_y = -((cursor_y/320.0f)-1.0f);
 
-		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+		const float vertices[] = {
+			(float)(cursor_x), (float)(cursor_y),
+			-0.9f,  0.9f,
+			 0.9f,  0.9f,
+			 0.9f, -0.9f,
+			-0.9f, -0.9f,
+			-0.9f,  0.9f,
+		};
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+		glDrawArrays(GL_TRIANGLE_FAN, 0, sizeof(vertices)/sizeof(vertices[0])/2);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
