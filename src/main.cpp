@@ -1,22 +1,47 @@
 #include <iostream>
 
-#include <glm/glm.hpp>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 
-#include "line.hpp"
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	if ((key == GLFW_KEY_Q) && (action == GLFW_PRESS))
+		glfwSetWindowShouldClose(window, GLFW_TRUE);
+}
 
 int main()
 {
-	glm::vec2 i(0.0f, 0.0f);
-	LineSegment segments[] = {
-		LineSegment(glm::vec2(0.0f, 0.0f), glm::vec2(2.0f, 2.0f)),
-		LineSegment(glm::vec2(0.0f, 2.0f), glm::vec2(2.0f, 0.0f)),
-		LineSegment(glm::vec2(0.5f, 2.0f), glm::vec2(0.5f, 0.0f)),
-	};
+	if (!glfwInit())
+		return -1;
 
-	for (int ii = 0; ii < sizeof(segments)/sizeof(segments[0]); ii++)
-		for (int jj = ii+1; jj < sizeof(segments)/sizeof(segments[0]); jj++)
-			if (segments[ii].intersect(segments[jj], i))
-				printf("intersect at (%f, %f); ii %d; jj %d;\n", i.x, i.y, ii, jj);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
+	GLFWwindow *window = glfwCreateWindow(640, 480, "OpenGL 2D Visibility Test", NULL, NULL);
+	if (!window)
+	{
+		glfwTerminate();
+		return -1;
+	}
+
+	glfwMakeContextCurrent(window);
+	if (glewInit() != GLEW_OK)
+	{
+		glfwTerminate();
+		return -1;
+	}
+
+	glfwSetKeyCallback(window, keyCallback);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	while (!glfwWindowShouldClose(window))
+	{
+		glClear(GL_COLOR_BUFFER_BIT);
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
 
 	return 0;
 }
