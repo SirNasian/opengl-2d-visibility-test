@@ -51,12 +51,11 @@ const char *fragment_source = R"glsl(
 
 	void main()
 	{
-		float visibility = 1.0;
-		for (int i = 0; i < 1024; i++)
+		float visibility = (1.0 - distance(world_pos, cursor_pos));
+		for (int i = 0; (i < 1024) && (visibility > 0.0); i++)
 			visibility *= calcVisibility(line_segments[i].xy, line_segments[i].zw);
 
 		colour = visibility
-		       * (1.0 - distance(world_pos, cursor_pos))
 		       * vec4(1.0, 1.0, 1.0, 1.0);
 	}
 )glsl";
