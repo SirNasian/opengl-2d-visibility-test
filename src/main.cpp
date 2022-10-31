@@ -24,10 +24,21 @@ void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
 		if (action == GLFW_PRESS)
 			last_point = cursor_pos;
 		else if (action == GLFW_RELEASE)
-			line_segments.push_back(LineSegment(last_point, cursor_pos));
+		{
+			glm::vec2 normal = glm::normalize(LineSegment(last_point, cursor_pos).normal());
+			glm::vec2 p1 = last_point + (normal * 0.01f);
+			glm::vec2 p2 = last_point - (normal * 0.01f);
+			glm::vec2 p3 = cursor_pos + (normal * 0.01f);
+			glm::vec2 p4 = cursor_pos - (normal * 0.01f);
+			line_segments.push_back(LineSegment(p1, p2));
+			line_segments.push_back(LineSegment(p2, p4));
+			line_segments.push_back(LineSegment(p4, p3));
+			line_segments.push_back(LineSegment(p3, p1));
+		}
 	}
 	else if ((button == GLFW_MOUSE_BUTTON_RIGHT) && (action == GLFW_PRESS) && (!line_segments.empty()))
-		line_segments.pop_back();
+		for (int _ = 0; _ < 4; _++)
+			line_segments.pop_back();
 }
 
 const char *vertex_source = R"glsl(
