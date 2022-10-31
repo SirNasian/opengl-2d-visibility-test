@@ -69,6 +69,21 @@ unsigned int createVAO(unsigned int shader_program, unsigned int &vbo)
 	return vao;
 }
 
+float getAngle(glm::vec2 origin, glm::vec2 target)
+{
+	glm::vec2 v1 = glm::vec2(-1.0f, 0.0f);
+	glm::vec2 v2 = glm::normalize(target - origin);
+	return (v2.y > 0.0f)
+		? glm::acos(glm::dot(v1, v2))
+		: glm::radians(360.0f) - glm::acos(glm::dot(v1, v2));
+}
+
+glm::vec2 cursor_pos;
+bool comparePoints(glm::vec2 p1, glm::vec2 p2)
+{
+	return (getAngle(p1, cursor_pos) < getAngle(p2, cursor_pos));
+}
+
 int main()
 {
 	if (!glfwInit())
@@ -107,10 +122,17 @@ int main()
 	std::list<LineSegment> line_segments;
 	std::list<glm::vec2>   points;
 
+	// Outer Square
 	line_segments.push_back(LineSegment(glm::vec2(-0.9f, -0.9f), glm::vec2(-0.9f, 0.9f)));
 	line_segments.push_back(LineSegment(glm::vec2(-0.9f, -0.9f), glm::vec2(0.9f, -0.9f)));
 	line_segments.push_back(LineSegment(glm::vec2(0.9f, 0.9f),   glm::vec2(-0.9f, 0.9f)));
 	line_segments.push_back(LineSegment(glm::vec2(0.9f, 0.9f),   glm::vec2(0.9f, -0.9f)));
+
+	// Inner Square
+	line_segments.push_back(LineSegment(glm::vec2(-0.4f, -0.4f), glm::vec2(-0.4f, 0.4f)));
+	line_segments.push_back(LineSegment(glm::vec2(-0.4f, -0.4f), glm::vec2(0.4f, -0.4f)));
+	line_segments.push_back(LineSegment(glm::vec2(0.4f, 0.4f),   glm::vec2(-0.4f, 0.4f)));
+	line_segments.push_back(LineSegment(glm::vec2(0.4f, 0.4f),   glm::vec2(0.4f, -0.4f)));
 
 	glfwSetKeyCallback(window, keyCallback);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -125,8 +147,8 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glfwGetCursorPos(window, &cursor_x, &cursor_y);
-		cursor_x =  ((cursor_x/320.0f)-1.0f);
-		cursor_y = -((cursor_y/320.0f)-1.0f);
+		cursor_pos.x =  ((cursor_x/320.0f)-1.0f);
+		cursor_pos.y = -((cursor_y/320.0f)-1.0f);
 
 		points.clear();
 		for (const LineSegment &line_segment: line_segments)
@@ -134,8 +156,43 @@ int main()
 			points.push_back(line_segment.p1);
 			points.push_back(line_segment.p2);
 		}
-		// TODO: sort points by angle relative to cursor location
-		points.push_front(glm::vec2(cursor_x, cursor_y));
+
+		points.sort(comparePoints);
+		points.unique();
+		points.remove_if([line_segments](glm::vec2 point)
+		{
+			glm::vec2 intersect;
+			for (LineSegment line_segment: line_segments)
+				if (
+					(line_segment.p1 != point) &&
+					(line_segment.p2 != point) &&
+					(line_segment.intersect(LineSegment(cursor_pos, point), intersect))
+				) return true;
+			return false;
+		});
+
+		for (glm::vec2 &point: points)
+		{
+			glm::vec2 intersect;
+			glm::vec2 original_point = point;
+			glm::vec2 distant_point = (glm::normalize(point - cursor_pos) * 1024.0f) + cursor_pos;
+			bool add_point = false;
+			for (LineSegment line_segment: line_segments)
+				if (
+					(line_segment.p1 != original_point) &&
+					(line_segment.p2 != original_point) &&
+					(line_segment.intersect(LineSegment(cursor_pos, distant_point), intersect)) &&
+					(glm::distance(cursor_pos, intersect) < glm::distance(cursor_pos, distant_point))
+				) {
+					add_point = true;
+					distant_point = intersect;
+				}
+			if (add_point) points.push_front(distant_point);
+		}
+		points.sort(comparePoints);
+
+		points.push_back(points.front());
+		points.push_front(cursor_pos);
 		float vertices[points.size()*2];
 		unsigned int i = 0;
 		for (glm::vec2 point: points)
@@ -145,8 +202,9 @@ int main()
 			i++;
 		}
 
+//		glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-		glDrawArrays(GL_TRIANGLE_FAN, 0, sizeof(vertices)/sizeof(vertices[0])/2);
+		glDrawArrays(GL_TRIANGLE_FAN, 0, points.size());
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

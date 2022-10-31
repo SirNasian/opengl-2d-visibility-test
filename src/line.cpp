@@ -34,7 +34,7 @@ bool LineSegment::intersect(Line line, glm::vec2 &intersect)
 	float d = glm::dot(line.normal, line.origin);
 	float x = (d - glm::dot(line.normal, this->p1)) / glm::dot(line.normal, this->direction());
 	intersect = this->p1 + (this->direction() * x);
-	return (this->length() > glm::abs(x));
+	return (x >= 0.0f) && (x <= this->length());
 }
 
 bool LineSegment::intersect(LineSegment segment, glm::vec2 &intersect)
