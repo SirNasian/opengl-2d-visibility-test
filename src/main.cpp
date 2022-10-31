@@ -13,6 +13,23 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 		glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
+std::list<LineSegment> line_segments;
+glm::vec2 last_point;
+glm::vec2 cursor_pos;
+
+void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
+{
+	if (button == GLFW_MOUSE_BUTTON_LEFT)
+	{
+		if (action == GLFW_PRESS)
+			last_point = cursor_pos;
+		else if (action == GLFW_RELEASE)
+			line_segments.push_back(LineSegment(last_point, cursor_pos));
+	}
+	else if ((button == GLFW_MOUSE_BUTTON_RIGHT) && (action == GLFW_PRESS) && (!line_segments.empty()))
+		line_segments.pop_back();
+}
+
 const char *vertex_source = R"glsl(
 	#version 330 core
 	in vec2 position;
@@ -78,7 +95,6 @@ float getAngle(glm::vec2 origin, glm::vec2 target)
 		: glm::radians(360.0f) - glm::acos(glm::dot(v1, v2));
 }
 
-glm::vec2 cursor_pos;
 bool comparePoints(glm::vec2 p1, glm::vec2 p2)
 {
 	return (getAngle(p1, cursor_pos) < getAngle(p2, cursor_pos));
@@ -119,9 +135,6 @@ int main()
 	double time_curr, time_last, time_delta;
 	time_last = glfwGetTime();
 
-	std::list<LineSegment> line_segments;
-	std::list<glm::vec2>   points;
-
 	// Outer Square
 	line_segments.push_back(LineSegment(glm::vec2(-0.9f, -0.9f), glm::vec2(-0.9f, 0.9f)));
 	line_segments.push_back(LineSegment(glm::vec2(-0.9f, -0.9f), glm::vec2(0.9f, -0.9f)));
@@ -135,6 +148,7 @@ int main()
 	line_segments.push_back(LineSegment(glm::vec2(0.4f, 0.4f),   glm::vec2(0.4f, -0.4f)));
 
 	glfwSetKeyCallback(window, keyCallback);
+	glfwSetMouseButtonCallback(window, mouseButtonCallback);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_STENCIL_TEST);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
