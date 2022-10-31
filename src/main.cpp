@@ -27,7 +27,7 @@ const char *fragment_source = R"glsl(
 	out vec4 fragment_colour;
 	void main()
 	{
-		fragment_colour = vec4(1.0, 1.0, 1.0, 1.0);
+		fragment_colour = vec4(0.0, 0.0, 0.0, 1.0);
 	}
 )glsl";
 
@@ -135,7 +135,7 @@ int main()
 	line_segments.push_back(LineSegment(glm::vec2(0.4f, 0.4f),   glm::vec2(0.4f, -0.4f)));
 
 	glfwSetKeyCallback(window, keyCallback);
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	while (!glfwWindowShouldClose(window))
 	{
 		time_curr  = glfwGetTime();
@@ -150,60 +150,30 @@ int main()
 		cursor_pos.x =  ((cursor_x/320.0f)-1.0f);
 		cursor_pos.y = -((cursor_y/320.0f)-1.0f);
 
-		points.clear();
-		for (const LineSegment &line_segment: line_segments)
+		glm::vec2 point;
+		float vertices[line_segments.size()*8];
+		unsigned int index = 0;
+		for (LineSegment line_segment: line_segments)
 		{
-			points.push_back(line_segment.p1);
-			points.push_back(line_segment.p2);
+			point = line_segment.p1 + (glm::normalize(line_segment.p1 - cursor_pos) * 1024.0f);
+			vertices[(index*8)+0] = line_segment.p1.x;
+			vertices[(index*8)+1] = line_segment.p1.y;
+			vertices[(index*8)+2] = point.x;
+			vertices[(index*8)+3] = point.y;
+
+			point = line_segment.p2 + (glm::normalize(line_segment.p2 - cursor_pos) * 1024.0f);
+			vertices[(index*8)+4] = line_segment.p2.x;
+			vertices[(index*8)+5] = line_segment.p2.y;
+			vertices[(index*8)+6] = point.x;
+			vertices[(index*8)+7] = point.y;
+
+			index++;
 		}
 
-		points.sort(comparePoints);
-		points.unique();
-		points.remove_if([line_segments](glm::vec2 point)
-		{
-			glm::vec2 intersect;
-			for (LineSegment line_segment: line_segments)
-				if (
-					(line_segment.intersect(LineSegment(cursor_pos, point), intersect)) &&
-					((glm::distance(cursor_pos, point) - glm::distance(cursor_pos, intersect)) > 0.01f)
-				) return true;
-			return false;
-		});
-
-		for (glm::vec2 &point: points)
-		{
-			float split_distance = 0.0001f;
-			glm::vec2 normal = glm::normalize(glm::cross(glm::vec3(point - cursor_pos, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
-			points.push_front(glm::vec2(point + (normal * split_distance)));
-			point = glm::vec2(point - (normal * split_distance));
-		}
-
-		for (glm::vec2 &point: points)
-		{
-			glm::vec2 intersect;
-			point = cursor_pos + (glm::normalize(point - cursor_pos) * 1024.0f);
-			for (LineSegment line_segment: line_segments)
-				if (
-					(line_segment.intersect(LineSegment(cursor_pos, point), intersect)) &&
-					(glm::distance(cursor_pos, intersect) < glm::distance(cursor_pos, point))
-				) point = intersect;
-		}
-
-		points.sort(comparePoints);
-		points.push_back(points.front());
-		points.push_front(cursor_pos);
-		float vertices[points.size()*2];
-		unsigned int i = 0;
-		for (glm::vec2 point: points)
-		{
-			vertices[(i*2)+0] = point.x;
-			vertices[(i*2)+1] = point.y;
-			i++;
-		}
-
-//		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-		glDrawArrays(GL_TRIANGLE_FAN, 0, points.size());
+		for (index = 0; index < line_segments.size(); index++)
+			glDrawArrays(GL_TRIANGLE_STRIP, index*4, 4);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
