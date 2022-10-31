@@ -33,18 +33,22 @@ void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
 const char *vertex_source = R"glsl(
 	#version 330 core
 	in vec2 position;
+	out vec2 world_pos;
 	void main()
 	{
+		world_pos   = position;
 		gl_Position = vec4(position, 0.0, 1.0);
 	}
 )glsl";
 
 const char *fragment_source = R"glsl(
 	#version 330 core
+	in vec2 world_pos;
 	out vec4 fragment_colour;
+	uniform vec2 cursor_pos;
 	void main()
 	{
-		fragment_colour = vec4(1.0, 1.0, 1.0, 1.0);
+		fragment_colour = (1.0 - distance(world_pos, cursor_pos)) * vec4(1.0, 1.0, 1.0, 1.0);
 	}
 )glsl";
 
@@ -131,6 +135,8 @@ int main()
 	glUseProgram(shader_program);
 	glBindVertexArray(vao);
 
+	unsigned int cursor_pos_attribute = glGetUniformLocation(shader_program, "cursor_pos");
+
 	double cursor_x, cursor_y;
 	double time_curr, time_last, time_delta;
 	time_last = glfwGetTime();
@@ -205,6 +211,7 @@ int main()
 			 1.0f, -1.0f,
 		};
 		glBufferData(GL_ARRAY_BUFFER, sizeof(square), square, GL_STATIC_DRAW);
+		glUniform2f(cursor_pos_attribute, cursor_pos.x, cursor_pos.y);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 		glfwSwapBuffers(window);
