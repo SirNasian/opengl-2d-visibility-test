@@ -26,9 +26,12 @@ const char *fragment_source = R"glsl(
 	in vec2 world_pos;
 	out vec4 colour;
 	uniform vec2 cursor_pos;
+	uniform vec4 line_segments[1024];
 
 	float calcVisibility(in vec2 line_start, in vec2 line_end)
 	{
+		if (distance(line_end, line_start) == 0.0) return 1.0;
+
 		vec2 ray         = world_pos - cursor_pos;
 		vec2 line_normal = cross(vec3(line_start - line_end, 0.0), vec3(0.0, 0.0, 1.0)).xy;
 		if (dot(line_normal, ray) == 0.0) return 0.0;
@@ -48,7 +51,13 @@ const char *fragment_source = R"glsl(
 
 	void main()
 	{
-		colour = calcVisibility(vec2(0.5, -0.5), vec2(0.5, 0.5)) * (1.0 - distance(world_pos, cursor_pos)) * vec4(1.0, 1.0, 1.0, 1.0);
+		float visibility = 1.0;
+		for (int i = 0; i < 1024; i++)
+			visibility *= calcVisibility(line_segments[i].xy, line_segments[i].zw);
+
+		colour = visibility
+		       * (1.0 - distance(world_pos, cursor_pos))
+		       * vec4(1.0, 1.0, 1.0, 1.0);
 	}
 )glsl";
 
@@ -138,6 +147,19 @@ int main()
 
 	double cursor_x, cursor_y;
 	unsigned int cursor_pos_uniform = glGetUniformLocation(shader_program, "cursor_pos");
+
+	float line_segments[] = {
+		// Triangle
+		 0.1f,  0.1f,  0.2f,  0.2f,
+		 0.1f,  0.1f,  0.2f,  0.0f,
+		 0.2f,  0.2f,  0.2f,  0.0f,
+		// Square
+		-0.5f, -0.5f, -0.5f, -0.2f,
+		-0.5f, -0.5f, -0.2f, -0.5f,
+		-0.2f, -0.2f, -0.5f, -0.2f,
+		-0.2f, -0.2f, -0.2f, -0.5f,
+	};
+	glUniform4fv(glGetUniformLocation(shader_program, "line_segments"), sizeof(line_segments)/sizeof(line_segments[0])/4, line_segments);
 
 	double time_curr, time_last, time_delta;
 	time_last = glfwGetTime();
