@@ -59,7 +59,7 @@ const char *fragment_source = R"glsl(
 	uniform vec2 cursor_pos;
 	void main()
 	{
-		fragment_colour = (1.0 - distance(world_pos, cursor_pos)) * vec4(1.0, 1.0, 1.0, 1.0);
+		fragment_colour = (0.5 - distance(world_pos, cursor_pos)) * vec4(1.0, 1.0, 1.0, 1.0);
 	}
 )glsl";
 
