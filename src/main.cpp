@@ -139,10 +139,19 @@ int main()
 	double cursor_x, cursor_y;
 	unsigned int cursor_pos_uniform = glGetUniformLocation(shader_program, "cursor_pos");
 
+	double time_curr, time_last, time_delta;
+	time_last = glfwGetTime();
+
 	glfwSetKeyCallback(window, keyCallback);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	while (!glfwWindowShouldClose(window))
 	{
+		time_curr  = glfwGetTime();
+		time_delta = time_curr - time_last;
+//		if (time_delta < 1.0f/60.0f) continue;
+		time_last  = time_curr;
+		printf("FPS: %.0f\n", 1.0f/time_delta);
+
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glfwGetCursorPos(window, &cursor_x, &cursor_y);
