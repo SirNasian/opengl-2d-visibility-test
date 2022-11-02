@@ -178,6 +178,11 @@ int main()
 			point = glm::vec2(point - (normal * split_distance));
 		}
 
+		points.push_front(cursor_pos + glm::vec2( 1.0f,  0.0f));
+		points.push_front(cursor_pos + glm::vec2(-1.0f,  0.0f));
+		points.push_front(cursor_pos + glm::vec2( 0.0f,  1.0f));
+		points.push_front(cursor_pos + glm::vec2( 0.0f, -1.0f));
+
 		for (glm::vec2 &point: points)
 		{
 			glm::vec2 intersect;
